@@ -64,7 +64,7 @@ void setup() {
   } else {
     Serial.print("Conectado no IP: ");
     Serial.println(Ethernet.localIP());
-    delay(2000);
+    delay(2000);cd ..
   }
 
   // tentando conectar no MQTT
@@ -81,13 +81,7 @@ void setup() {
 }
 
 void loop() {
-  // se perder a conexão com a internet tenta reconectar
-  if (!ethClient.connected()) {
-    Serial.println("Conexão com internet perdida");
-    delay(2 * 1000);
-    reconnectEth();
-  }
-
+  Ethernet.maintain();
   // se perder a conexão com o MQTT tenta reconectar
   if (!mqttClient.connected()) {
     Serial.println("Conexão com MQTT perdida.");
@@ -115,41 +109,25 @@ void loop() {
   mqttClient.loop();
 }
 
-// essa função fica tentando se reconectar a internet.
-void reconnectEth() {
-  //Ethernet.begin(mac);
-  while (!ethClient.connected()) {
-    Serial.println("Tentando reconectar internet");
-    if (ethClient.available()) {
-      //    Serial.println("Tentando reconectar internet");
-      char c = ethClient.read();
-      Serial.print(c);
-      Serial.print("Conectado no IP: ");
-      Serial.println(Ethernet.localIP());
-      delay(2000);
-    }
-
-  }
-
-  // essa função fica tentando se reconectar ao MQTT.
-  void reconnectMQTT() {
-    while (!mqttClient.connected()) {
-      Serial.println("Tentando reconectar MQTT...");
-      if (mqttClient.connect("clientId2", "teste", "123")) {
-        Serial.println("Conectado");
-        delay(2 * 1000);
-        // envia via mqtt uma mensagem de conectado
-        mqttClient.publish("Vaga", "Conectado!!! eeeeeee");
-        mqttClient.subscribe("Vaga");
-        delay(5000);
-      } else {
-        Serial.print("failed, rc=");
-        Serial.print(mqttClient.state());
-        Serial.println("Tentará reconecta em 2 segundos");
-        delay(2 * 1000);
-      }
+// essa função fica tentando se reconectar ao MQTT.
+void reconnectMQTT() {
+  while (!mqttClient.connected()) {
+    Serial.println("Tentando reconectar MQTT...");
+    if (mqttClient.connect("clientId2", "teste", "123")) {
+      Serial.println("Conectado");
+      delay(2 * 1000);
+      // envia via mqtt uma mensagem de conectado
+      mqttClient.publish("Vaga", "Conectado!!! eeeeeee");
+      mqttClient.subscribe("Vaga");
+      delay(5000);
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println("Tentará reconecta em 2 segundos");
+      delay(2 * 1000);
     }
   }
+}
 
 
 
