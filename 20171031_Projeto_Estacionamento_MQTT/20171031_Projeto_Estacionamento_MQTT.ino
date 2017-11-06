@@ -10,6 +10,10 @@
 const int greenPin = 2; // colocar a porta
 const int redPin = 4;
 int distance;
+int prevDistance;
+int statusLedAtual;
+int statusLedAnterior;
+
 
 // setando as configuracoes do MQTT
 byte mac[]    = {  0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0x14 };
@@ -18,6 +22,7 @@ int port = 11528;
 
 // setando as configurações do sensor de distnacia
 Ultrasonic ultrasonic(7, 8);
+
 
 // função callback - para receber as informações dos tópicos
 void callback (char* topic, byte* payload, unsigned int length, boolean retained) {
@@ -47,6 +52,7 @@ void callback (char* topic, byte* payload, unsigned int length, boolean retained
 EthernetClient ethClient;
 PubSubClient mqttClient (mqtt_server, port, callback, ethClient);
 
+
 void setup() {
   // seta os pinos leds
   pinMode (greenPin, OUTPUT);
@@ -64,7 +70,7 @@ void setup() {
   } else {
     Serial.print("Conectado no IP: ");
     Serial.println(Ethernet.localIP());
-    delay(2000);cd ..
+    delay(2000); cd ..
   }
 
   // tentando conectar no MQTT
@@ -78,9 +84,11 @@ void setup() {
   } else {
     Serial.println("Não conectado com MQTT");
   }
+
 }
 
 void loop() {
+
   Ethernet.maintain();
   // se perder a conexão com o MQTT tenta reconectar
   if (!mqttClient.connected()) {
@@ -93,21 +101,37 @@ void loop() {
 
   // le a distancia
   distance = ultrasonic.distanceRead();
+  Serial.print("Distancia Atual: ");
   Serial.println(distance);
 
+  //  if (distance && (prevDistance > 6)) {
   // acende o led vermelho se a distancia for menor que 6,
   // acende o led ver se a distancia for maior ou igual a 6.
   if (distance >= 6) {
-    digitalWrite(greenPin, HIGH);
-    digitalWrite(redPin, LOW);
+    digitalWrite(greenPin, 1);
+    digitalWrite(redPin, 0);
     delay(100);
   } else {
-    digitalWrite(greenPin, LOW);
-    digitalWrite(redPin, HIGH);
+    digitalWrite(greenPin, 0);
+    digitalWrite(redPin, 1);
     delay(100);
   }
+  statusLedAtual = digitalRead(greenPin);
+
+  if (statusLedAtual != statusLedAnterior) {
+    if (statusLedAtual == 1) {
+      Serial.println("Vaga disponível");
+    } else {
+      Serial.println("Vaga indisponível");
+    }
+    statusLedAnterior = statusLedAtual;
+    delay(2 * 1000);
+  }
   mqttClient.loop();
+  loop();
 }
+
+
 
 // essa função fica tentando se reconectar ao MQTT.
 void reconnectMQTT() {
@@ -128,6 +152,7 @@ void reconnectMQTT() {
     }
   }
 }
+
 
 
 
