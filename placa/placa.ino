@@ -14,6 +14,10 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 int vagasDisponiveis = 0;
 int vagasOcupadas = 0;
+long tempoInicial;
+int redpin = A0;    //Pin A0
+int greenpin = 9;  //Pin 9
+int bluepin = 8;    //Pin 8
 
 // Atualizar ultimo valor para ID do seu Kit para evitar duplicatas
 byte mac[] = { 0xDE, 0xED, 0xBA, 0xFE, 0xF1, 0x55 };
@@ -42,6 +46,9 @@ void whenMessageReceived(char* topic, byte* payload, unsigned int length) {
   Serial.print("Numero lido: "); Serial.println(msgComoNumero);
   Serial.flush();
 
+  tempoInicial = millis(); // somente se quiser resetar o tempo
+  lcd.display();
+
   switch (msgComoNumero) {
     case 1:
       vagasDisponiveis = vagasDisponiveis + 1;
@@ -60,15 +67,15 @@ void whenMessageReceived(char* topic, byte* payload, unsigned int length) {
       break;
   }
 
-  lcd.setCursor(12,0);
+  lcd.setCursor(12, 0);
   lcd.print("    ");
-  lcd.setCursor(12,0);
+  lcd.setCursor(12, 0);
   lcd.print(vagasDisponiveis);
-  lcd.setCursor(12,1);
+  lcd.setCursor(12, 1);
   lcd.print("    ");
-  lcd.setCursor(12,1);
+  lcd.setCursor(12, 1);
   lcd.print(vagasOcupadas);
-  
+
   Serial.print("Vagas disponíveis: ");
   Serial.println(vagasDisponiveis);
   Serial.print("Vagas ocupadas   : ");
@@ -89,6 +96,10 @@ void setup() {
   lcd.clear();
   lcd.print("Iniciando...");
 
+  pinMode(bluepin, OUTPUT);
+  pinMode(greenpin, OUTPUT);
+  pinMode(redpin, OUTPUT);
+
   Serial.println("Connecting...");
 
   while (!Serial) {}
@@ -107,6 +118,7 @@ void setup() {
   lcd.setCursor(0, 1);
   lcd.print("Ocupadas   :");
 }
+
 void loop() {
 
   if (!client.connected()) {
@@ -117,17 +129,29 @@ void loop() {
   // para manter a conexão MQTT e processar mensagens recebidas (via a função callback)
   client.loop();
 
+  if (millis() >= (tempoInicial + 10000)) {
+    lcd.noDisplay();
+  }
 
-//  if (Serial.available() > 0) {
-//    // Lê String do Monitor Serial
-//    String msg = Serial.readString();
-//    Serial.print("Mensagem recebida: ");
-//    Serial.println(msg);
-//    lcd.setCursor(0, 1);
-//    lcd.print("                ");
-//    lcd.setCursor(0, 1);
-//    lcd.print(msg);
-//}
+  if (vagasDisponiveis == 0) {
+    analogWrite(bluepin, 250);   //MAGENTA
+    analogWrite(redpin, 250);
+  } else {
+    analogWrite(redpin, 0);
+    analogWrite(greenpin, 0);
+    analogWrite(bluepin, 0);
+  }
+
+  //  if (Serial.available() > 0) {
+  //    // Lê String do Monitor Serial
+  //    String msg = Serial.readString();
+  //    Serial.print("Mensagem recebida: ");
+  //    Serial.println(msg);
+  //    lcd.setCursor(0, 1);
+  //    lcd.print("                ");
+  //    lcd.setCursor(0, 1);
+  //    lcd.print(msg);
+  //}
 
   delay(100);
 }
