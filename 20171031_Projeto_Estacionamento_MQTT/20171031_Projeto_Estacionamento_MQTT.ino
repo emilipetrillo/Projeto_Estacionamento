@@ -1,4 +1,3 @@
-
 // incluindo as bibliotecas
 #include <PubSubClient.h> // MQTT
 #include <SPI.h> // comunicacao
@@ -9,6 +8,7 @@
 // declarando as variáveis
 const int greenPin = 2; // colocar a porta
 const int redPin = 4;
+const int yellowPin = A1;
 int distance;
 int prevDistance;
 int statusLedAtual;
@@ -57,12 +57,19 @@ void setup() {
   // seta os pinos leds
   pinMode (greenPin, OUTPUT);
   pinMode (redPin, OUTPUT);
+  pinMode (yellowPin, OUTPUT);
 
   // tenta conexão com a internet
   Serial.begin(9600);
-  while (!Serial) {}
+  while (!Serial) { }
 
   Serial.println("Tentando conexão via DHCP/IP...");
+  //    Serial.println("teeeesssteee leeddd");
+  //    digitalWrite(yellowPin, HIGH);
+  //    delay(100);
+  //    digitalWrite(yellowPin, LOW);
+  //    delay(100);
+
 
   // tentando conectar via DHCP, se falhar tenta por IP
   if (!Ethernet.begin(mac)) {
@@ -70,21 +77,30 @@ void setup() {
   } else {
     Serial.print("Conectado no IP: ");
     Serial.println(Ethernet.localIP());
-    delay(2000); cd ..
+    delay(2000);
   }
 
-  // tentando conectar no MQTT
-  if (mqttClient.connect("ClientId", "teste", "123", "TopicWill", 0, false, "0")) {
-    Serial.println("Conectado com MQTT");
-    mqttClient.publish("Vaga", "1", true); // reportando vaga disponível. O true faz a função do retain
-    //mqttClient.publish("TopicWill", "0", false); // replicando a msg do broker
-    mqttClient.subscribe("Vaga");
-    mqttClient.setCallback(callback);
-    Serial.flush();
-  } else {
-    Serial.println("Não conectado com MQTT");
-  }
-
+  reconnectMQTT();
+  /*
+    // tentando conectar no MQTT
+    if (mqttClient.connect("ClientId", "teste", "123", "Vaga", 0, true, "")) {
+      // ClientID - nome unico
+      // teste - nome do user no mqtt
+      // 123 - senha
+      // Vaga - nome do topico no mqtt
+      // 0 - default
+      // true - para ativar a função do retain
+      // "" - apaga todas as mensagens quando for desligado abruptamente
+      Serial.println("Conectado com MQTT");
+      mqttClient.publish("Vaga", "1", true); // reportando vaga disponível. O true faz a função do retain
+      //mqttClient.publish("TopicWill", "0", false); // replicando a msg do broker
+      mqttClient.subscribe("Vaga");
+      mqttClient.setCallback(callback);
+      Serial.flush();
+    } else {
+      Serial.println("Não conectado com MQTT");
+    }
+  */
 }
 
 void loop() {
@@ -121,29 +137,52 @@ void loop() {
   if (statusLedAtual != statusLedAnterior) {
     if (statusLedAtual == 1) {
       Serial.println("Vaga disponível");
+      mqttClient.publish("Vaga", "1", true);
     } else {
       Serial.println("Vaga indisponível");
+      mqttClient.publish("Vaga", "0", true);
     }
     statusLedAnterior = statusLedAtual;
-    delay(2 * 1000);
+    delay(100);
   }
   mqttClient.loop();
-  loop();
+  //loop();
 }
 
 
 
 // essa função fica tentando se reconectar ao MQTT.
 void reconnectMQTT() {
+  digitalWrite(yellowPin, LOW);
   while (!mqttClient.connected()) {
+
     Serial.println("Tentando reconectar MQTT...");
-    if (mqttClient.connect("clientId2", "teste", "123")) {
+    
+    digitalWrite(yellowPin, HIGH);
+    delay(100);
+    digitalWrite(yellowPin, LOW);
+    delay(100);
+    digitalWrite(yellowPin, HIGH);
+    delay(100);
+    digitalWrite(yellowPin, LOW);
+    delay(100);
+    
+    if (mqttClient.connect("ClientId", "teste", "123", "Vaga", 0, true, "")) {
+      // ClientID - nome unico
+      // teste - nome do user no mqtt
+      // 123 - senha
+      // Vaga - nome do topico no mqtt
+      // 0 - default
+      // true - para ativar a função do retain
+      // "" - apaga todas as mensagens quando for desligado abruptamente
+      Serial.println("Conectado com MQTT");
       Serial.println("Conectado");
       delay(2 * 1000);
       // envia via mqtt uma mensagem de conectado
-      mqttClient.publish("Vaga", "Conectado!!! eeeeeee");
+      mqttClient.publish("Vaga", "1", true);
       mqttClient.subscribe("Vaga");
-      delay(5000);
+      mqttClient.setCallback(callback);
+      Serial.flush();
     } else {
       Serial.print("failed, rc=");
       Serial.print(mqttClient.state());
