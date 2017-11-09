@@ -17,8 +17,9 @@ int statusLedAnterior;
 
 // setando as configuracoes do MQTT
 byte mac[]    = {  0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0x14 };
-const char* mqtt_server = "m12.cloudmqtt.com";
-int port = 11528;
+//const char* mqtt_server = "m12.cloudmqtt.com";
+int port = 1883;
+IPAddress server(192, 168, 3, 186);
 
 // setando as configurações do sensor de distnacia
 Ultrasonic ultrasonic(7, 8);
@@ -50,7 +51,7 @@ void callback (char* topic, byte* payload, unsigned int length, boolean retained
 }
 
 EthernetClient ethClient;
-PubSubClient mqttClient (mqtt_server, port, callback, ethClient);
+PubSubClient mqttClient (server, port, callback, ethClient);
 
 
 void setup() {
@@ -137,10 +138,10 @@ void loop() {
   if (statusLedAtual != statusLedAnterior) {
     if (statusLedAtual == 1) {
       Serial.println("Vaga disponível");
-      mqttClient.publish("Vaga", "1", true);
+      mqttClient.publish("vagas/14", "1", true);
     } else {
       Serial.println("Vaga indisponível");
-      mqttClient.publish("Vaga", "0", true);
+      mqttClient.publish("vagas/14", "0", true);
     }
     statusLedAnterior = statusLedAtual;
     delay(100);
@@ -167,7 +168,7 @@ void reconnectMQTT() {
     digitalWrite(yellowPin, LOW);
     delay(100);
     
-    if (mqttClient.connect("ClientId", "teste", "123", "Vaga", 0, true, "")) {
+    if (mqttClient.connect("ClientId", "teste", "123", "vagas", 0, true, "")) {
       // ClientID - nome unico
       // teste - nome do user no mqtt
       // 123 - senha
@@ -179,8 +180,8 @@ void reconnectMQTT() {
       Serial.println("Conectado");
       delay(2 * 1000);
       // envia via mqtt uma mensagem de conectado
-      mqttClient.publish("Vaga", "1", true);
-      mqttClient.subscribe("Vaga");
+      mqttClient.publish("vagas/14", "1", true);
+      mqttClient.subscribe("vagas/14");
       mqttClient.setCallback(callback);
       Serial.flush();
     } else {
