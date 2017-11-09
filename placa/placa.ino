@@ -21,12 +21,16 @@ int bluepin = 8;    //Pin 8
 
 int vagas[40] = {};
 
-// Atualizar ultimo valor para ID do seu Kit para evitar duplicatas
+//// Atualizar ultimo valor para ID do seu Kit para evitar duplicatas
+//byte mac[] = { 0xDE, 0xED, 0xBA, 0xFE, 0xF1, 0x55 };
+//// Endereço do Cloud MQTT
+//char* server = "m12.cloudmqtt.com";
+//// Valor da porta do servidor MQTT
+//int port = 12397;
+
 byte mac[] = { 0xDE, 0xED, 0xBA, 0xFE, 0xF1, 0x55 };
-// Endereço do Cloud MQTT
-char* server = "m12.cloudmqtt.com";
-// Valor da porta do servidor MQTT
-int port = 12397;
+int port = 1883;
+IPAddress server(192, 168, 3, 186);
 EthernetClient ethClient;
 
 
@@ -43,46 +47,29 @@ void whenMessageReceived(char* topic, byte* payload, unsigned int length) {
   // devemos usar Serial.flush() para garantir que as mensagens serão enviadas
   Serial.flush();
 
-  String topicID = String(topic[5]);
-  topicID += topic[6];
-  int index = topicID.toInt();
+  tempoInicial = millis(); // somente se quiser resetar o tempo
+  lcd.display();
 
   int msgComoNumero = msg.toInt();
 
   Serial.print("Numero lido: "); Serial.println(msgComoNumero);
   Serial.flush();
 
-  tempoInicial = millis(); // somente se quiser resetar o tempo
-  lcd.display();
+  String topicID = String(topic[5]);
+  topicID += String(topic[6]);
+  int index = topicID.toInt();
 
   vagas[index] = msgComoNumero;
   vagasOcupadas = 0;
   vagasDisponiveis = 0;
 
   for (int i = 0; i < 40; i++) {
-    if (vagas[index] == 1) {
+    if (vagas[i] == 1) {
       vagasDisponiveis = vagasDisponiveis + 1;
-    } else if (vagas[index] == 0) {
+    } else if (vagas[i] == 0) {
       vagasOcupadas = vagasOcupadas + 1;
     }
   }
-
-  //  switch (msgComoNumero) {
-  //    case 1:
-  //      vagasDisponiveis = vagasDisponiveis + 1;
-  //      if (vagasOcupadas > 0) {
-  //        vagasOcupadas = vagasOcupadas - 1;
-  //      }
-  //      break;
-  //    case 0:
-  //      if (vagasDisponiveis > 0) {
-  //        vagasDisponiveis = vagasDisponiveis - 1;
-  //      }
-  //      vagasOcupadas = vagasOcupadas + 1;
-  //      break;
-  //    default:
-  //      Serial.println("Opção não disponível");
-  //      break;
 
   lcd.setCursor(12, 0);
   lcd.print("    ");
@@ -93,10 +80,6 @@ void whenMessageReceived(char* topic, byte* payload, unsigned int length) {
   lcd.setCursor(12, 1);
   lcd.print(vagasOcupadas);
 
-  Serial.print("Vagas disponíveis: ");
-  Serial.println(vagasDisponiveis);
-  Serial.print("Vagas ocupadas   : ");
-  Serial.println(vagasOcupadas);
 }
 
 
@@ -107,7 +90,7 @@ void setup() {
 
   Serial.println("Pronto");
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
   lcd.clear();
@@ -119,6 +102,7 @@ void setup() {
 
   for (int i = 0; i < 40; i++) {
     vagas[i] = 9; // set value 9 to all the array index
+    Serial.println(vagas[i]);
   }
 
   Serial.println("Connecting...");
@@ -156,7 +140,8 @@ void loop() {
 
   if (vagasDisponiveis == 0) {
     analogWrite(bluepin, 250);   //MAGENTA
-    analogWrite(redpin, 250);
+    analogWrite(redpin, 255);
+    analogWrite(greenpin, 69);
   } else {
     analogWrite(redpin, 0);
     analogWrite(greenpin, 0);
@@ -171,10 +156,10 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    //if (client.connect("id23")) {
-    if (client.connect("id23", "codexpiot", "iot")) {
+    //if (client.connect("id23", "codexpiot", "iot")) {
+    if (client.connect("id23")) {
       //Conecta no topic para receber mensagens
-      client.subscribe("vaga/+");
+      client.subscribe("vagas/+");
       //      client.subscribe("vaga");
       Serial.println("conectado topico");
     } else {
