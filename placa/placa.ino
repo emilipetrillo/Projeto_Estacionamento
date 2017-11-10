@@ -55,18 +55,24 @@ void whenMessageReceived(char* topic, byte* payload, unsigned int length) {
   Serial.print("Numero lido: "); Serial.println(msgComoNumero);
   Serial.flush();
 
-  String topicID = String(topic[5]);
-  topicID += String(topic[6]);
+  String topicID = String(topic[6]);
+  topicID += String(topic[7]);
   int index = topicID.toInt();
 
+ 
   vagas[index] = msgComoNumero;
+  
+
+}
+
+void atualizaVagas(){
   vagasOcupadas = 0;
   vagasDisponiveis = 0;
 
   for (int i = 0; i < 40; i++) {
     if (vagas[i] == 1) {
       vagasDisponiveis = vagasDisponiveis + 1;
-    } else if (vagas[i] == 0) {
+    } else {
       vagasOcupadas = vagasOcupadas + 1;
     }
   }
@@ -79,7 +85,6 @@ void whenMessageReceived(char* topic, byte* payload, unsigned int length) {
   lcd.print("    ");
   lcd.setCursor(12, 1);
   lcd.print(vagasOcupadas);
-
 }
 
 
@@ -100,10 +105,6 @@ void setup() {
   pinMode(greenpin, OUTPUT);
   pinMode(redpin, OUTPUT);
 
-  for (int i = 0; i < 40; i++) {
-    vagas[i] = 9; // set value 9 to all the array index
-    Serial.println(vagas[i]);
-  }
 
   Serial.println("Connecting...");
 
@@ -122,6 +123,9 @@ void setup() {
   lcd.print("Disponiveis:");
   lcd.setCursor(0, 1);
   lcd.print("Ocupadas   :");
+
+  aualizaVagas();
+  Serial.println("VVVVVVVVVVVVVVVVVVVVVVVaaaaa");
 }
 
 void loop() {
@@ -141,7 +145,7 @@ void loop() {
   if (vagasDisponiveis == 0) {
     analogWrite(bluepin, 250);   //MAGENTA
     analogWrite(redpin, 255);
-    analogWrite(greenpin, 69);
+//    analogWrite(greenpin, 9);
   } else {
     analogWrite(redpin, 0);
     analogWrite(greenpin, 0);
