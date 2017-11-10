@@ -1,3 +1,5 @@
+
+
 // incluindo as bibliotecas
 #include <PubSubClient.h> // MQTT
 #include <SPI.h> // comunicacao
